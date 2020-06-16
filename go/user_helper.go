@@ -2,10 +2,17 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/jmoiron/sqlx"
+)
+
+var (
+	defaultLastBump, _ = time.Parse("2006-01-02", "2000-01-01")
 )
 
 func getUser(r *http.Request) (user User, errCode int, errMsg string) {
@@ -37,4 +44,58 @@ func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple UserSimple, err
 	userSimple.AccountName = user.AccountName
 	userSimple.NumSellItems = user.NumSellItems
 	return userSimple, err
+}
+
+func CreateUser(accountName, address string, hashedPassword []byte) (User, error) {
+	var user User
+	now := time.Now()
+	result, err := dbx.Exec("INSERT INTO `users` (`account_name`, `hashed_password`, `address`, `last_bump`, `created_at`) VALUES (?, ?, ?, ?, ?)",
+		accountName,
+		hashedPassword,
+		address,
+		defaultLastBump,
+		now,
+	)
+	if err != nil {
+		log.Print(err)
+		return user, err
+	}
+
+	userID, err := result.LastInsertId()
+	if err != nil {
+		log.Print(err)
+		return user, err
+	}
+
+	user = User{
+		ID:             userID,
+		AccountName:    accountName,
+		Address:        address,
+		NumSellItems:   0,
+		HashedPassword: hashedPassword,
+		LastBump:       defaultLastBump,
+		CreatedAt:      now,
+	}
+	key := fmt.Sprintf("%s%v", USER_KEY, userID)
+	conn := redisPool.Get()
+	_, err = conn.Do("SET", key, user.toJSON())
+	if err != nil {
+		return user, err
+	}
+
+	return user, nil
+}
+
+func (u User) toJSON() []byte {
+	m := make(map[string]interface{})
+	m["id"] = u.ID
+	m["account_name"] = u.AccountName
+	m["hashed_password"] = u.HashedPassword
+	m["address"] = u.Address
+	m["num_sell_items"] = u.NumSellItems
+	m["last_bump"] = u.LastBump
+	m["created_at"] = u.CreatedAt
+
+	b, _ := json.Marshal(m)
+	return b
 }

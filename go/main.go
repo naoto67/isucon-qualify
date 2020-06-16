@@ -79,6 +79,7 @@ func main() {
 		log.Fatalf("failed to connect to DB: %s.", err.Error())
 	}
 	defer dbx.Close()
+	redisPool = newRedis()
 
 	mux := newRoute()
 	log.Fatal(http.ListenAndServe(":8000", mux))
@@ -1878,31 +1879,12 @@ func postRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := dbx.Exec("INSERT INTO `users` (`account_name`, `hashed_password`, `address`) VALUES (?, ?, ?)",
-		accountName,
-		hashedPassword,
-		address,
-	)
+	u, err := CreateUser(accountName, address, hashedPassword)
 	if err != nil {
 		log.Print(err)
 
 		outputErrorMsg(w, http.StatusInternalServerError, "db error")
 		return
-	}
-
-	userID, err := result.LastInsertId()
-
-	if err != nil {
-		log.Print(err)
-
-		outputErrorMsg(w, http.StatusInternalServerError, "db error")
-		return
-	}
-
-	u := User{
-		ID:          userID,
-		AccountName: accountName,
-		Address:     address,
 	}
 
 	session := getSession(r)
