@@ -36,4 +36,7 @@ const (
 	TransactionsPerPage = 10
 
 	BcryptCost = 10
+
+	// REDIS
+	USER_KEY = "uid:"
 )
