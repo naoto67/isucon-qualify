@@ -57,8 +57,14 @@ func removeTradingItemID(itemID int64) error {
 	return err
 }
 
-func isMemberTradingItemID(itemID int64) (ok bool, err error) {
+func isMemberTradingItemID(itemID interface{}) (ok bool, err error) {
 	conn := redisPool.Get()
 	ok, err = redis.Bool(conn.Do("SISMEMBER", TRADING_ITEM_IDS_KEY, itemID))
+	return
+}
+
+func isMemberItemID(itemID interface{}) (ok bool, err error) {
+	conn := redisPool.Get()
+	ok, err = redis.Bool(conn.Do("SISMEMBER", ITEM_IDS_KEY, itemID))
 	return
 }
