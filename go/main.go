@@ -80,6 +80,10 @@ func main() {
 	}
 	defer dbx.Close()
 	redisPool = newRedis()
+	conn := redisPool.Get()
+	defer conn.Close()
+	res, err := conn.Do("PING")
+	fmt.Println("DEBUG: ", res, err)
 
 	mux := newRoute()
 	log.Fatal(http.ListenAndServe(":8000", mux))
