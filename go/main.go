@@ -510,14 +510,14 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 	for _, v := range items {
 		itemIDs = append(itemIDs, strconv.Itoa(int(v.ID)))
 	}
-	rows, err := tx.Queryx("SELECT * FROM `transaction_evidences` INNER JOINS `shippings` ON transactionEvidences.id = shipping.transaction_evidences WHERE `item_id` IN (?)", strings.Join(itemIDs, ","))
-	defer rows.Close()
+	rows, err := tx.Queryx("SELECT * FROM `transaction_evidences` INNER JOIN `shippings` ON transaction_evidences.id = shippings.transaction_evidence_id WHERE transaction_evidences.item_id IN (?)", strings.Join(itemIDs, ","))
 
 	if err != nil {
 		outputErrorMsg(w, http.StatusNotFound, "category not found")
 		tx.Rollback()
 		return
 	}
+	defer rows.Close()
 
 	transactionEvidences := map[int64]TS{}
 	for rows.Next() {
