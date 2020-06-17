@@ -80,11 +80,17 @@ func main() {
 	}
 	defer dbx.Close()
 	NewCacheClient()
+	redisPool = newRedis()
 
 	err = initializeCategories()
 	if err != nil {
 		log.Print(err)
 	}
+	err = initializeItemIDs()
+	if err != nil {
+		log.Print(err)
+	}
+
 	mux := newRoute()
 	log.Fatal(http.ListenAndServe(":8000", mux))
 }
@@ -1011,6 +1017,15 @@ func postBuy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = addTradingItemID(targetItem.ID)
+	if err != nil {
+		log.Print(err)
+
+		outputErrorMsg(w, http.StatusInternalServerError, "db error")
+		tx.Rollback()
+		return
+	}
+
 	scr, err := APIShipmentCreate(getShipmentServiceURL(), &APIShipmentCreateReq{
 		ToAddress:   buyer.Address,
 		ToName:      buyer.AccountName,
@@ -1500,6 +1515,15 @@ func postComplete(w http.ResponseWriter, r *http.Request) {
 		time.Now(),
 		itemID,
 	)
+	if err != nil {
+		log.Print(err)
+
+		outputErrorMsg(w, http.StatusInternalServerError, "db error")
+		tx.Rollback()
+		return
+	}
+
+	err = removeTradingItemID(itemID)
 	if err != nil {
 		log.Print(err)
 
