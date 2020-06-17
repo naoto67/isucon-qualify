@@ -80,11 +80,11 @@ func main() {
 	}
 	defer dbx.Close()
 	redisPool = newRedis()
-	conn := redisPool.Get()
-	defer conn.Close()
-	res, err := conn.Do("PING")
-	fmt.Println("DEBUG: ", res, err)
 
+	err = initializeCategories()
+	if err != nil {
+		log.Print(err)
+	}
 	mux := newRoute()
 	log.Fatal(http.ListenAndServe(":8000", mux))
 }
@@ -178,8 +178,7 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = initializeCategories()
-
+	err = initializeUsersCache()
 	if err != nil {
 		log.Print(err)
 		outputErrorMsg(w, http.StatusInternalServerError, "db error")

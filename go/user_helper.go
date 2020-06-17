@@ -99,3 +99,22 @@ func (u User) toJSON() []byte {
 	b, _ := json.Marshal(m)
 	return b
 }
+
+func initializeUsersCache() error {
+	var users []User
+	err := dbx.Select(&users, "SELECT * FROM `users`")
+	if err != nil {
+		return err
+	}
+	conn := redisPool.Get()
+
+	for _, user := range users {
+		key := fmt.Sprintf("%s%v", USER_KEY, user.ID)
+		_, err = conn.Do("SET", key, user.toJSON())
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
