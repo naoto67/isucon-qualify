@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -505,6 +506,64 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	var itemIDs []string
+	for _, v := range items {
+		itemIDs = append(itemIDs, strconv.Itoa(int(v.ID)))
+	}
+	rows, err := tx.Queryx("SELECT * FROM `transaction_evidences` INNER JOINS `shippings` ON transactionEvidences.id = shipping.transaction_evidences WHERE `item_id` IN (?)", strings.Join(itemIDs, ","))
+	defer rows.Close()
+
+	if err != nil {
+		outputErrorMsg(w, http.StatusNotFound, "category not found")
+		tx.Rollback()
+		return
+	}
+
+	transactionEvidences := map[int64]TS{}
+	for rows.Next() {
+		t := TransactionEvidence{}
+		s := Shipping{}
+		err = rows.Scan(
+			&t.ID,
+			&t.SellerID,
+			&t.BuyerID,
+			&t.Status,
+			&t.ItemID,
+			&t.ItemName,
+			&t.ItemPrice,
+			&t.ItemDescription,
+			&t.ItemCategoryID,
+			&t.ItemRootCategoryID,
+			&t.CreatedAt,
+			&t.UpdatedAt,
+			&s.TransactionEvidenceID,
+			&s.Status,
+			&s.ItemName,
+			&s.ItemID,
+			&s.ReserveID,
+			&s.ReserveTime,
+			&s.ToAddress,
+			&s.ToName,
+			&s.FromAddress,
+			&s.FromName,
+			&s.ImgBinary,
+			&s.CreatedAt,
+			&s.UpdatedAt,
+		)
+
+		if err != nil {
+			log.Println(err)
+			outputErrorMsg(w, http.StatusInternalServerError, "db error")
+			tx.Rollback()
+			return
+		}
+
+		transactionEvidences[t.ItemID] = TS{
+			TransactionEvidence: t,
+			Shipping:            s,
+		}
+	}
+
 	itemDetails := []ItemDetail{}
 	for _, item := range items {
 		seller, err := getUserSimpleByID(tx, item.SellerID)
@@ -550,32 +609,9 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 			itemDetail.Buyer = &buyer
 		}
 
-		transactionEvidence := TransactionEvidence{}
-		err = tx.Get(&transactionEvidence, "SELECT * FROM `transaction_evidences` WHERE `item_id` = ?", item.ID)
-		if err != nil && err != sql.ErrNoRows {
-			// It's able to ignore ErrNoRows
-			log.Print(err)
-			outputErrorMsg(w, http.StatusInternalServerError, "db error")
-			tx.Rollback()
-			return
-		}
-
-		if transactionEvidence.ID > 0 {
-			shipping := Shipping{}
-			err = tx.Get(&shipping, "SELECT * FROM `shippings` WHERE `transaction_evidence_id` = ?", transactionEvidence.ID)
-			if err == sql.ErrNoRows {
-				outputErrorMsg(w, http.StatusNotFound, "shipping not found")
-				tx.Rollback()
-				return
-			}
-			if err != nil {
-				log.Print(err)
-				outputErrorMsg(w, http.StatusInternalServerError, "db error")
-				tx.Rollback()
-				return
-			}
+		if val, ok := transactionEvidences[itemDetail.ID]; ok {
 			ssr, err := APIShipmentStatus(getShipmentServiceURL(), &APIShipmentStatusReq{
-				ReserveID: shipping.ReserveID,
+				ReserveID: val.Shipping.ReserveID,
 			})
 			if err != nil {
 				log.Print(err)
@@ -584,8 +620,8 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			itemDetail.TransactionEvidenceID = transactionEvidence.ID
-			itemDetail.TransactionEvidenceStatus = transactionEvidence.Status
+			itemDetail.TransactionEvidenceID = val.TransactionEvidence.ID
+			itemDetail.TransactionEvidenceStatus = val.TransactionEvidence.Status
 			itemDetail.ShippingStatus = ssr.Status
 		}
 
