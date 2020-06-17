@@ -951,12 +951,7 @@ func postBuy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	seller := User{}
-	err = tx.Get(&seller, "SELECT * FROM `users` WHERE `id` = ? FOR UPDATE", targetItem.SellerID)
-	if err == sql.ErrNoRows {
-		outputErrorMsg(w, http.StatusNotFound, "seller not found")
-		tx.Rollback()
-		return
-	}
+	seller, err = getUserByID(targetItem.SellerID)
 	if err != nil {
 		log.Print(err)
 
@@ -1603,20 +1598,7 @@ func postSell(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tx := dbx.MustBegin()
-
-	seller := User{}
-	err = tx.Get(&seller, "SELECT * FROM `users` WHERE `id` = ? FOR UPDATE", user.ID)
-	if err == sql.ErrNoRows {
-		outputErrorMsg(w, http.StatusNotFound, "user not found")
-		tx.Rollback()
-		return
-	}
-	if err != nil {
-		log.Print(err)
-		outputErrorMsg(w, http.StatusInternalServerError, "db error")
-		tx.Rollback()
-		return
-	}
+	seller := user
 
 	result, err := tx.Exec("INSERT INTO `items` (`seller_id`, `status`, `name`, `price`, `description`,`image_name`,`category_id`) VALUES (?, ?, ?, ?, ?, ?, ?)",
 		seller.ID,
@@ -1707,20 +1689,7 @@ func postBump(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	seller := User{}
-	err = tx.Get(&seller, "SELECT * FROM `users` WHERE `id` = ? FOR UPDATE", user.ID)
-	if err == sql.ErrNoRows {
-		outputErrorMsg(w, http.StatusNotFound, "user not found")
-		tx.Rollback()
-		return
-	}
-	if err != nil {
-		log.Print(err)
-		outputErrorMsg(w, http.StatusInternalServerError, "db error")
-		tx.Rollback()
-		return
-	}
-
+	seller := user
 	now := time.Now()
 	// last_bump + 3s > now
 	if seller.LastBump.Add(BumpChargeSeconds).After(now) {
