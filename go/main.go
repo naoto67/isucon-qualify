@@ -1649,6 +1649,14 @@ func postSell(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = addItemID(itemID)
+	if err != nil {
+		log.Print(err)
+
+		outputErrorMsg(w, http.StatusInternalServerError, "db error")
+		return
+	}
+
 	err = updateNumSellItems(tx, seller.ID, seller.NumSellItems+1)
 	if err != nil {
 		log.Print(err)
