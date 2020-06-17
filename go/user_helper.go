@@ -37,10 +37,19 @@ func getUser(r *http.Request) (user User, errCode int, errMsg string) {
 
 func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple UserSimple, err error) {
 	user := User{}
-	err = sqlx.Get(q, &user, "SELECT * FROM `users` WHERE `id` = ?", userID)
+
+	conn := redisPool.Get()
+	key := fmt.Sprintf("%s%v", USER_KEY, userID)
+	data, err := redis.Bytes(conn.Do("GET", key))
 	if err != nil {
-		return userSimple, err
+		return UserSimple{}, err
 	}
+
+	err = json.Unmarshal(data, &user)
+	if err != nil {
+		return UserSimple{}, err
+	}
+
 	userSimple.ID = user.ID
 	userSimple.AccountName = user.AccountName
 	userSimple.NumSellItems = user.NumSellItems
