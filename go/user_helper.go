@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gomodule/redigo/redis"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -117,4 +118,35 @@ func initializeUsersCache() error {
 	}
 
 	return nil
+}
+
+func updateNumSellItems(q *sqlx.Tx, userID int64, num int) error {
+	now := time.Now()
+	_, err := q.Exec("UPDATE `users` SET `num_sell_items`=?, `last_bump`=? WHERE `id`=?",
+		num,
+		now,
+		userID,
+	)
+	if err != nil {
+		return err
+	}
+
+	conn := redisPool.Get()
+	key := fmt.Sprintf("%s%v", USER_KEY, userID)
+	data, err := redis.Bytes(conn.Do("GET", key))
+	if err != nil {
+		return err
+	}
+
+	var user User
+	err = json.Unmarshal(data, &user)
+	if err != nil {
+		return err
+	}
+
+	user.NumSellItems = num
+	user.LastBump = now
+
+	_, err = conn.Do("SET", key, user.toJSON())
+	return err
 }
