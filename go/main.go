@@ -185,6 +185,7 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cacheClient.FLUSH()
+	FLUSH_ALL()
 
 	err = initializeUsersCache()
 	if err != nil {
