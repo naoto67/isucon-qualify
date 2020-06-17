@@ -23,7 +23,7 @@ func initializeItemIDs() error {
 	var tradingItemIDs []string
 
 	for rows.Next() {
-		if err := rows.Scan(&item); err != nil {
+		if err := rows.StructScan(&item); err != nil {
 			return err
 		}
 
