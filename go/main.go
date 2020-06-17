@@ -178,6 +178,8 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	FLUSH_ALL()
+
 	err = initializeUsersCache()
 	if err != nil {
 		log.Print(err)

@@ -17,3 +17,8 @@ func newRedis() *redis.Pool {
 		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", redisAddress) },
 	}
 }
+
+func FLUSH_ALL() {
+	conn := redisPool.Get()
+	conn.Do("FLUSHALL")
+}
