@@ -1275,10 +1275,9 @@ func postShipDone(w http.ResponseWriter, r *http.Request) {
 
 	tx := dbx.MustBegin()
 
-	item := Item{}
-	err = tx.Get(&item, "SELECT * FROM `items` WHERE `id` = ? FOR UPDATE", itemID)
-	if err == sql.ErrNoRows {
-		outputErrorMsg(w, http.StatusNotFound, "items not found")
+	ok, err := isMemberItemID(itemID)
+	if !ok {
+		outputErrorMsg(w, http.StatusNotFound, "item not found")
 		tx.Rollback()
 		return
 	}
@@ -1288,8 +1287,8 @@ func postShipDone(w http.ResponseWriter, r *http.Request) {
 		tx.Rollback()
 		return
 	}
-
-	if item.Status != ItemStatusTrading {
+	ok, err = isMemberTradingItemID(itemID)
+	if err != nil || !ok {
 		outputErrorMsg(w, http.StatusForbidden, "商品が取引中ではありません")
 		tx.Rollback()
 		return
