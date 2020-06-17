@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -23,13 +22,16 @@ func getUser(r *http.Request) (user User, errCode int, errMsg string) {
 		return user, http.StatusNotFound, "no session"
 	}
 
-	err := dbx.Get(&user, "SELECT * FROM `users` WHERE `id` = ?", userID)
-	if err == sql.ErrNoRows {
+	conn := redisPool.Get()
+	key := fmt.Sprintf("%s%v", USER_KEY, userID)
+	data, err := redis.Bytes(conn.Do("GET", key))
+	if err != nil {
 		return user, http.StatusNotFound, "user not found"
 	}
+
+	err = json.Unmarshal(data, &user)
 	if err != nil {
-		log.Print(err)
-		return user, http.StatusInternalServerError, "db error"
+		return user, http.StatusInternalServerError, "MarshalError"
 	}
 
 	return user, http.StatusOK, ""
