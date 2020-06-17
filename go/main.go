@@ -86,10 +86,6 @@ func main() {
 	if err != nil {
 		log.Print(err)
 	}
-	err = initializeItemIDs()
-	if err != nil {
-		log.Print(err)
-	}
 
 	mux := newRoute()
 	log.Fatal(http.ListenAndServe(":8000", mux))
@@ -192,6 +188,11 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 		log.Print(err)
 		outputErrorMsg(w, http.StatusInternalServerError, "db error")
 		return
+	}
+
+	err = initializeItemIDs()
+	if err != nil {
+		log.Print(err)
 	}
 
 	res := resInitialize{
