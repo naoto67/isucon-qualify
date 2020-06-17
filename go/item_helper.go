@@ -1,6 +1,10 @@
 package main
 
-import "github.com/gomodule/redigo/redis"
+import (
+	"strconv"
+
+	"github.com/gomodule/redigo/redis"
+)
 
 const (
 	ITEM_IDS_KEY         = "item_id_set"
@@ -15,8 +19,8 @@ func initializeItemIDs() error {
 	}
 	defer rows.Close()
 	var item Item
-	var itemIDs []int64
-	var tradingItemIDs []int64
+	var itemIDs []string
+	var tradingItemIDs []string
 
 	for rows.Next() {
 		if err := rows.Scan(&item); err != nil {
@@ -24,9 +28,9 @@ func initializeItemIDs() error {
 		}
 
 		if item.Status == ItemStatusTrading {
-			tradingItemIDs = append(tradingItemIDs, item.ID)
+			tradingItemIDs = append(tradingItemIDs, strconv.Itoa(int(item.ID)))
 		}
-		itemIDs = append(itemIDs, item.ID)
+		itemIDs = append(itemIDs, strconv.Itoa(int(item.ID)))
 	}
 
 	conn := redisPool.Get()
