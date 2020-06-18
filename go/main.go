@@ -85,7 +85,7 @@ func main() {
 		log.Println("REDIS CLUSTER: ", err)
 	}
 
-	res, err := redisCluster.Do("PING")
+	res, err := redisCluster.Do("SET", "FIRST", "VALUE")
 	fmt.Println("DEBUG: ", res, err)
 	if err != nil {
 		panic(err)
