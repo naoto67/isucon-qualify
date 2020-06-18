@@ -85,6 +85,12 @@ func main() {
 		log.Println("REDIS CLUSTER: ", err)
 	}
 
+	res, err := redisCluster.Do("PING")
+	fmt.Println("DEBUG: ", res, err)
+	if err != nil {
+		panic(err)
+	}
+
 	err = initializeCategories()
 	if err != nil {
 		log.Print(err)

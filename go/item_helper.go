@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/chasex/redis-go-cluster"
@@ -27,7 +26,6 @@ func initializeItemIDs() error {
 		if err := rows.StructScan(&item); err != nil {
 			return err
 		}
-		fmt.Println("DEBUG: ", item.Status)
 		if item.Status == ItemStatusTrading {
 			tradingItemIDs = append(tradingItemIDs, strconv.Itoa(int(item.ID)))
 		}
