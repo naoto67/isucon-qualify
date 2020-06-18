@@ -80,7 +80,10 @@ func main() {
 	}
 	defer dbx.Close()
 	NewCacheClient()
-	redisPool = newRedis()
+	redisCluster, err = newRedis()
+	if err != nil {
+		log.Println("REDIS CLUSTER: ", err)
+	}
 
 	err = initializeCategories()
 	if err != nil {
