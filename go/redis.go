@@ -1,28 +1,23 @@
 package main
 
 import (
-	"time"
+	"context"
 
-	"github.com/chasex/redis-go-cluster"
+	"github.com/go-redis/redis/v8"
 )
 
-var redisAddress = "localhost:6379"
+var redisCtx = context.Background()
 
 // var redisPool *redis.Pool
-var redisCluster redis.Cluster
+var redisCluster *redis.ClusterClient
 
-func newRedis() (redis.Cluster, error) {
-	return redis.NewCluster(
-		&redis.Options{
-			StartNodes:   []string{"127.0.0.1:7006", "127.0.0.1:7001", "127.0.0.1:7002", "127.0.0.1:7003", "127.0.0.1:7004", "127.0.0.1:7005"},
-			ConnTimeout:  50 * time.Millisecond,
-			ReadTimeout:  50 * time.Millisecond,
-			WriteTimeout: 50 * time.Millisecond,
-			KeepAlive:    16,
-			AliveTime:    60 * time.Second,
-		})
+func newRedis() (*redis.ClusterClient, error) {
+	rdb := redis.NewClusterClient(&redis.ClusterOptions{
+		Addrs: []string{":7006", ":7001", ":7002", ":7003", ":7004", ":7005"},
+	})
+	return rdb, nil
 }
 
 func FLUSH_ALL() {
-	redisCluster.Do("FLUSHALL")
+	redisCluster.Do(redisCtx, "FLUSHALL")
 }

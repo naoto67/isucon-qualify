@@ -80,12 +80,9 @@ func main() {
 	}
 	defer dbx.Close()
 	NewCacheClient()
-	redisCluster, err = newRedis()
-	if err != nil {
-		log.Println("REDIS CLUSTER: ", err)
-	}
+	redisCluster, _ = newRedis()
 
-	res, err := redisCluster.Do("SET", "FIRST", "VALUE")
+	res, err := redisCluster.Do(redisCtx, "PING").Result()
 	fmt.Println("DEBUG: ", res, err)
 	if err != nil {
 		panic(err)

@@ -2,8 +2,6 @@ package main
 
 import (
 	"strconv"
-
-	"github.com/chasex/redis-go-cluster"
 )
 
 const (
@@ -19,8 +17,8 @@ func initializeItemIDs() error {
 	}
 	defer rows.Close()
 	var item Item
-	itemIDs := []interface{}{ITEM_IDS_KEY}
-	tradingItemIDs := []interface{}{TRADING_ITEM_IDS_KEY}
+	itemIDs := []interface{}{"SADD", ITEM_IDS_KEY}
+	tradingItemIDs := []interface{}{"SADD", TRADING_ITEM_IDS_KEY}
 
 	for rows.Next() {
 		if err := rows.StructScan(&item); err != nil {
@@ -32,36 +30,36 @@ func initializeItemIDs() error {
 		itemIDs = append(itemIDs, strconv.Itoa(int(item.ID)))
 	}
 
-	_, err = redisCluster.Do("SADD", itemIDs...)
+	err = redisCluster.Do(redisCtx, itemIDs...).Err()
 	if err != nil {
 		return err
 	}
-	_, err = redisCluster.Do("SADD", tradingItemIDs...)
+	err = redisCluster.Do(redisCtx, tradingItemIDs...).Err()
 	return err
 }
 
 func addItemID(itemID int64) error {
-	_, err := redisCluster.Do("SADD", ITEM_IDS_KEY, itemID)
+	err := redisCluster.Do(redisCtx, "SADD", ITEM_IDS_KEY, itemID).Err()
 	return err
 }
 
 func addTradingItemID(itemID int64) error {
-	_, err := redisCluster.Do("SADD", TRADING_ITEM_IDS_KEY, itemID)
+	err := redisCluster.Do(redisCtx, "SADD", TRADING_ITEM_IDS_KEY, itemID).Err()
 	return err
 }
 func removeTradingItemID(itemID int64) error {
 	// key が set型でなければerrorを返す
 	// memberが存在していない場合は、何も実行しない
-	_, err := redisCluster.Do("SREM", TRADING_ITEM_IDS_KEY, itemID)
+	err := redisCluster.Do(redisCtx, "SREM", TRADING_ITEM_IDS_KEY, itemID).Err()
 	return err
 }
 
 func isMemberTradingItemID(itemID interface{}) (ok bool, err error) {
-	ok, err = redis.Bool(redisCluster.Do("SISMEMBER", TRADING_ITEM_IDS_KEY, itemID))
+	ok, err = redisCluster.Do(redisCtx, "SISMEMBER", TRADING_ITEM_IDS_KEY, itemID).Bool()
 	return
 }
 
 func isMemberItemID(itemID interface{}) (ok bool, err error) {
-	ok, err = redis.Bool(redisCluster.Do("SISMEMBER", ITEM_IDS_KEY, itemID))
+	ok, err = redisCluster.Do(redisCtx, "SISMEMBER", ITEM_IDS_KEY, itemID).Bool()
 	return
 }

@@ -5,6 +5,7 @@ go 1.12
 require (
 	github.com/bradfitz/gomemcache v0.0.0-20190913173617-a41fca850d0b
 	github.com/chasex/redis-go-cluster v1.0.0
+	github.com/go-redis/redis/v8 v8.0.0-beta.5
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/gomodule/redigo v1.8.2
 	github.com/gorilla/sessions v1.2.0
