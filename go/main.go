@@ -180,6 +180,13 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 
 	cacheClient.FLUSH()
 
+	err = initializeItems()
+	if err != nil {
+		log.Print(err)
+		outputErrorMsg(w, http.StatusInternalServerError, "db error")
+		return
+	}
+
 	err = initializeUsersCache()
 	if err != nil {
 		log.Print(err)
@@ -1010,6 +1017,14 @@ func postBuy(w http.ResponseWriter, r *http.Request) {
 		tx.Rollback()
 		return
 	}
+	err = addTradingItemID(targetItem.ID)
+	if err != nil {
+		log.Print(err)
+
+		outputErrorMsg(w, http.StatusInternalServerError, "db error")
+		tx.Rollback()
+		return
+	}
 
 	scr, err := APIShipmentCreate(getShipmentServiceURL(), &APIShipmentCreateReq{
 		ToAddress:   buyer.Address,
@@ -1500,6 +1515,15 @@ func postComplete(w http.ResponseWriter, r *http.Request) {
 		time.Now(),
 		itemID,
 	)
+	if err != nil {
+		log.Print(err)
+
+		outputErrorMsg(w, http.StatusInternalServerError, "db error")
+		tx.Rollback()
+		return
+	}
+
+	err = removeTradingItemID(itemID)
 	if err != nil {
 		log.Print(err)
 

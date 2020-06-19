@@ -30,6 +30,10 @@ func (c CacheClient) Get(key string) ([]byte, error) {
 	return item.Value, nil
 }
 
+func (c CacheClient) Delete(key string) error {
+	return c.cli.Delete(key)
+}
+
 func (c CacheClient) FLUSH() {
 	c.cli.FlushAll()
 }
