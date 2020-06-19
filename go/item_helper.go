@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"google.golang.org/appengine/memcache"
+	"github.com/bradfitz/gomemcache/memcache"
 )
 
 const (
