@@ -599,19 +599,9 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if val, ok := transactionEvidences[itemDetail.ID]; ok {
-			ssr, err := APIShipmentStatus(getShipmentServiceURL(), &APIShipmentStatusReq{
-				ReserveID: val.Shipping.ReserveID,
-			})
-			if err != nil {
-				log.Print(err)
-				outputErrorMsg(w, http.StatusInternalServerError, "failed to request to shipment service")
-				tx.Rollback()
-				return
-			}
-
 			itemDetail.TransactionEvidenceID = val.TransactionEvidence.ID
 			itemDetail.TransactionEvidenceStatus = val.TransactionEvidence.Status
-			itemDetail.ShippingStatus = ssr.Status
+			itemDetail.ShippingStatus = val.Shipping.Status
 		}
 
 		itemDetails = append(itemDetails, itemDetail)
