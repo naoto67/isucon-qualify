@@ -466,7 +466,7 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 	if itemID > 0 && createdAt > 0 {
 		// paging
 		err := tx.Select(&items,
-			"SELECT * FROM (SELECT * FROM `items` WHERE `seller_id` = ? UNION SELECT * FROM `items` WHERE  `buyer_id` = ?) WHERE `created_at` <= ? AND `id` < ? ORDER BY `created_at` DESC, `id` DESC LIMIT ?",
+			"SELECT * FROM (SELECT * FROM `items` WHERE `seller_id` = ? UNION SELECT * FROM `items` WHERE  `buyer_id` = ?) AS t WHERE `created_at` <= ? AND `id` < ? ORDER BY `created_at` DESC, `id` DESC LIMIT ?",
 			user.ID,
 			user.ID,
 			time.Unix(createdAt, 0),
